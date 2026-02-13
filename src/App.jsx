@@ -1,41 +1,67 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Logo from './assets/Logo.png';
-import { FaLinkedin } from "react-icons/fa6";
-import { FaGithub } from "react-icons/fa";
-import { FaInstagram } from "react-icons/fa";
-import { FaTwitterSquare } from "react-icons/fa";
-import { FaDownload } from "react-icons/fa";
+import { FaLinkedin, FaGithub, FaTwitterSquare, FaDownload } from "react-icons/fa";
+import { SiLeetcode } from "react-icons/si";
 import About from './components/About.jsx';
 import ProjectSec from './components/ProjectSec.jsx';
-import Client from './components/Client.jsx';
+import Education from './components/Education.jsx';
 import Contact from './components/Contact.jsx';
 import Footer from './components/Footer.jsx';
 import CursorEffect from './CursorEffect.jsx';
+import { motion, AnimatePresence } from 'framer-motion';
 
+// ── Typewriter hook ────────────────────────────────────────────────────────────
+function useTypewriter(words, typingSpeed = 90, deletingSpeed = 55, pauseMs = 1600) {
+  const [displayed, setDisplayed] = useState('');
+  const [wordIndex, setWordIndex] = useState(0);
+  const [phase, setPhase] = useState('typing'); // 'typing' | 'pausing' | 'deleting'
+
+  useEffect(() => {
+    const current = words[wordIndex];
+
+    if (phase === 'typing') {
+      if (displayed.length < current.length) {
+        const t = setTimeout(() => setDisplayed(current.slice(0, displayed.length + 1)), typingSpeed);
+        return () => clearTimeout(t);
+      } else {
+        const t = setTimeout(() => setPhase('deleting'), pauseMs);
+        return () => clearTimeout(t);
+      }
+    }
+
+    if (phase === 'deleting') {
+      if (displayed.length > 0) {
+        const t = setTimeout(() => setDisplayed(displayed.slice(0, -1)), deletingSpeed);
+        return () => clearTimeout(t);
+      } else {
+        setWordIndex((wordIndex + 1) % words.length);
+        setPhase('typing');
+      }
+    }
+  }, [displayed, phase, wordIndex, words, typingSpeed, deletingSpeed, pauseMs]);
+
+  return displayed;
+}
+
+// ── App ───────────────────────────────────────────────────────────────────────
 function App() {
   const [showAbout, setShowAbout] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
 
-  // Page load animation
-  useEffect(() => {
-    setIsLoaded(true);
-    // Add small delay before showing elements
-    setTimeout(() => {
-      setIsVisible(true);
-    }, 100);
-  }, []);
+  // Typewriter — only on the name line
+  const animatedName = useTypewriter(
+    ['Bablu Kumar', 'a MERN Developer', 'a Problem Solver', 'Bablu Kumar'],
+    85, 50, 1800
+  );
 
-  // Listen for About modal open event from Footer
+  useEffect(() => { setIsLoaded(true); }, []);
+
   useEffect(() => {
-    const handleAboutOpen = (e) => {
-      setShowAbout(true);
-    };
+    const handleAboutOpen = () => setShowAbout(true);
     window.addEventListener('openAboutModal', handleAboutOpen);
     return () => window.removeEventListener('openAboutModal', handleAboutOpen);
   }, []);
 
-  // Resume download function
   const handleResumeDownload = () => {
     const resumeUrl = '/bablukumar_069.pdf';
     const link = document.createElement('a');
@@ -46,161 +72,221 @@ function App() {
     document.body.removeChild(link);
   };
 
-  return (
-    <div className='bg-[#191919]'> {/* ✅ min-h-screen हटा दिया */}
+  const navItemVariants = {
+    hidden: { opacity: 0, y: -20 },
+    visible: { opacity: 1, y: 0 }
+  };
 
-      {/* Animated Background Gradient */}
-      <div className="fixed inset-0 bg-gradient-to-br from-[#191919] via-[#1a1a2e] to-[#16213e] opacity-80"></div>
-      <div className="fixed inset-0 opacity-30" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+  return (
+    <div className='bg-[#111111] min-h-screen text-white font-sans selection:bg-blue-500/30 selection:text-white relative overflow-x-hidden'>
+
+      {/* Background Layer 1: Gradients */}
+      <div className="fixed inset-0 bg-gradient-to-br from-[#111111] via-[#151520] to-[#0f172a] -z-30"></div>
+
+      {/* Background Layer 2: Dots */}
+      <div className="fixed inset-0 opacity-10 -z-20" style={{
+        backgroundImage: `radial-gradient(#ffffff 1px, transparent 1px)`,
+        backgroundSize: '30px 30px'
       }}></div>
 
-      {/* Navigation */}
-      <nav className={`relative z-10 shadow-sm py-3 px-8 transition-all duration-1000 ease-out ${
-        isVisible ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'
-      }`}>
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            {/* Logo */}
-            <div className="flex-shrink-0">
-              <img 
-                src={Logo} 
-                alt="logo" 
-                className={`h-16 w-auto transition-all duration-1000 ease-out ${
-                  isVisible ? 'scale-100 rotate-0' : 'scale-75 rotate-12'
-                }`}
-              />
-            </div>
+      {/* Custom Cursor & Particles */}
+      <CursorEffect />
 
-            {/* Resume Download Button */}
-            <div className={`transition-all duration-1000 ease-out delay-300 ${
-              isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
-            }`}>
-              <button
-                onClick={handleResumeDownload}
-                className="group relative bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 
-                         text-white px-5 py-2 rounded-full transition-all duration-500 ease-out transform hover:scale-105 
-                         hover:shadow-2xl flex items-center gap-3 overflow-hidden border border-blue-500/30 cursor-pointer text-sm md:text-base"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                <FaDownload className="relative z-10 text-lg group-hover:animate-bounce" />
-                <span className="relative z-10 font-medium">Download Resume</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              </button>
-            </div>
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#111111]/80 backdrop-blur-md border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={navItemVariants}
+              transition={{ duration: 0.5 }}
+              className="flex-shrink-0 cursor-pointer"
+              onClick={() => window.scrollTo(0, 0)}
+            >
+              <img src={Logo} alt="logo" className="h-12 w-auto" />
+            </motion.div>
+
+            <motion.button
+              initial="hidden"
+              animate="visible"
+              variants={navItemVariants}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              onClick={handleResumeDownload}
+              className="group relative px-6 py-2 rounded-full bg-white/5 border border-white/10 overflow-hidden transition-all hover:bg-white/10 hover:border-blue-500/30"
+            >
+              <div className="flex items-center gap-2 relative z-10">
+                <span className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">Resume</span>
+                <FaDownload className="text-gray-400 text-xs group-hover:text-blue-400 group-hover:translate-y-0.5 transition-all" />
+              </div>
+            </motion.button>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <div className="flex flex-col md:flex-row items-center justify-between px-8 max-w-7xl mx-auto gap-0 relative z-10 py-20">
-        {/* Left Content */}
-        <div className={`text-white ml-0 md:ml-16 mb-8 md:mb-0 md:w-1/2 md:mr-[10px] transition-all duration-1000 ease-out flex flex-col justify-center ${
-          isVisible ? 'translate-x-0 opacity-100' : '-translate-x-20 opacity-0'
-        }`}>
-          <h2 className={`text-2xl md:text-4xl font-bold mb-2 transition-all duration-1000 ease-out delay-200 ${
-            isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
-          }`}>
-            <span className="bg-gradient-to-r text-4xl from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-              Bablu Kumar
-            </span>
-          </h2>
-          
-          <p className={`italic text-sm md:text-md mt-4 text-white mb-6 transition-all duration-1000 ease-out delay-300 ${
-            isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
-          }`}>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-300 to-gray-500 text-xl">
+      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6 max-w-7xl mx-auto">
+        <div className="flex flex-col-reverse lg:flex-row items-center justify-between gap-12 lg:gap-20">
+
+          {/* Left Content */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="flex-1 text-center lg:text-left"
+          >
+            <h2 className="text-sm md:text-base font-medium text-blue-400 mb-4 tracking-wider uppercase">
               MERN Stack Developer
-            </span>
-          </p>
-          
-          <button 
-  className={`cursor-pointer group bg-gradient-to-r from-blue-600 to-purple-700 
-              hover:from-blue-700 hover:to-purple-800 text-white 
-              px-4 py-3 md:px-8 md:py-3 rounded-2xl 
-              transition-all duration-500 ease-out delay-300 
-              transform hover:scale-105 hover:shadow-2xl
-              flex items-center justify-center gap-2 relative overflow-hidden 
-              text-sm md:text-base font-medium tracking-wide
-              ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`} 
-  onClick={() => setShowAbout(true)}
->
-  <span className="relative z-10 text-md">About me</span>
-  <svg xmlns="http://www.w3.org/2000/svg" 
-       className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" 
-       fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-          d="M14 5l7 7m0 0l-7 7m7-7H3" />
-  </svg>
-  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent 
-                  -translate-x-full group-hover:translate-x-full 
-                  transition-transform duration-700"></div>
-</button>
+            </h2>
+
+            {/* ── Animated heading ── */}
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight">
+              Hello, I'm <br />
+              <span className="bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent inline-block min-h-[1.2em]">
+                {animatedName}
+                {/* blinking cursor */}
+                <span className="inline-block w-[3px] h-[0.85em] ml-1 align-middle bg-purple-400 rounded-sm animate-pulse" />
+              </span>
+            </h1>
+
+            <p className="text-gray-400 text-lg md:text-xl leading-relaxed mb-8 max-w-2xl mx-auto lg:mx-0">
+              I build exceptional digital experiences that are fast, accessible, and visually stunning. Passionate about creating software that solves real-world problems.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+              <button
+                onClick={() => document.getElementById('projects-section').scrollIntoView({ behavior: 'smooth' })}
+                className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full font-medium text-white hover:shadow-lg hover:shadow-blue-500/25 transition-all transform hover:-translate-y-1"
+              >
+                View Work
+              </button>
+              <button
+                onClick={() => setShowAbout(true)}
+                className="px-8 py-3 bg-white/5 border border-white/10 rounded-full font-medium text-white hover:bg-white/10 transition-all"
+              >
+                About Me
+              </button>
+            </div>
+
+            {/* Social Icons */}
+            <div className="mt-12 flex items-center justify-center lg:justify-start gap-6">
+              {[
+                { icon: FaLinkedin, href: "https://www.linkedin.com/in/bablu-kumar92/", color: "hover:text-blue-400" },
+                { icon: FaGithub, href: "https://github.com/BabluKumar091", color: "hover:text-gray-400" },
+                { icon: SiLeetcode, href: "https://leetcode.com/u/BabluKumar09/", color: "hover:text-[#FFA116]" },
+                { icon: FaTwitterSquare, href: "https://twitter.com/BabluKumar091", color: "hover:text-blue-400" }
+              ].map((social, index) => (
+                <a
+                  key={index}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`text-gray-400 text-2xl transition-all duration-300 transform hover:scale-110 ${social.color}`}
+                >
+                  <social.icon />
+                </a>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Right Image — same as original */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+            className="flex-1 relative flex items-center justify-center py-16"
+          >
+            <div className="relative w-52 h-52 md:w-80 md:h-80 mx-auto">
+
+              <motion.div
+                animate={{ opacity: [0.3, 0.5, 0.3], scale: [1, 1.1, 1] }}
+                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+                className="absolute inset-[-15%] rounded-full bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 blur-[50px]"
+              />
+
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
+                className="absolute inset-[-8%] rounded-full"
+                style={{
+                  background: 'conic-gradient(from 90deg, transparent 70%, rgba(59,130,246,0.2), rgba(139,92,246,0.2), rgba(236,72,153,0.2), transparent 90%)',
+                  padding: '1px',
+                  borderRadius: '9999px',
+                  WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                  WebkitMaskComposite: 'xor',
+                  maskComposite: 'exclude',
+                }}
+              />
+
+              <motion.div
+                animate={{ rotate: 360, scale: [1, 1.2, 1] }}
+                transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+                className="absolute inset-[-5%]"
+                style={{ borderRadius: '9999px' }}
+              >
+                <motion.div
+                  animate={{ scale: [1, 1.5, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                  className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-blue-400/50 shadow-[0_0_10px_2px_rgba(96,165,250,0.3)]"
+                />
+              </motion.div>
+
+              <motion.div
+                animate={{ y: [0, -6, 0], scale: [1, 1.02, 1] }}
+                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", times: [0, 0.5, 1] }}
+                className="relative z-10 w-full h-full"
+              >
+                <div className="w-full h-full rounded-full bg-gradient-to-br from-white/[0.05] to-white/[0.02] backdrop-blur-sm border border-white/10 flex items-center justify-center overflow-hidden shadow-2xl">
+                  <motion.div
+                    animate={{ opacity: [0.1, 0.2, 0.1] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                    className="absolute inset-0 rounded-full bg-gradient-to-tr from-blue-500/10 via-purple-500/10 to-pink-500/10"
+                  />
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
+                    className="absolute inset-0 opacity-20"
+                    style={{
+                      background: 'radial-gradient(circle at 30% 50%, rgba(59,130,246,0.1) 0%, transparent 60%), radial-gradient(circle at 70% 50%, rgba(236,72,153,0.1) 0%, transparent 60%)',
+                    }}
+                  />
+                  <img
+                    src={Logo}
+                    alt="Profile"
+                    className="w-[85%] h-[85%] object-contain drop-shadow-2xl relative z-10"
+                  />
+                </div>
+              </motion.div>
+
+              {[
+                { top: '15%', left: '15%', delay: 0 },
+                { bottom: '15%', right: '15%', delay: 2 },
+              ].map((pos, i) => (
+                <motion.div
+                  key={i}
+                  style={{ position: 'absolute', ...pos }}
+                  animate={{ opacity: [0, 0.4, 0], scale: [0, 1, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, delay: pos.delay, ease: 'easeInOut', times: [0, 0.5, 1] }}
+                  className="w-1 h-1 rounded-full bg-white/30 blur-[1px]"
+                />
+              ))}
+
+            </div>
+          </motion.div>
 
         </div>
-
-        {/* Center Image */}
-        <div className={`mb-8 md:mb-0 md:w-1/1 flex ml-0 transition-all duration-1000 ease-out delay-500 flex items-center justify-center ${
-          isVisible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-20 opacity-0 scale-90'
-        }`}>
-          <div className="relative group">
-            <img 
-              src={Logo} 
-              alt="Profile" 
-              className="h-64 md:h-80 w-auto object-contain transition-all duration-700 ease-out hover:scale-105 hover:rotate-2" 
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-full blur-3xl -z-10 group-hover:blur-2xl transition-all duration-700"></div>
-          </div>
-        </div>
-
-        {/* Social Icons */}
-        <div className={`md:w-1/6 flex md:flex-col justify-center space-x-4 md:space-x-0 md:space-y-4 md:mr-[50px] transition-all duration-1000 ease-out delay-600 flex items-center ${
-          isVisible ? 'translate-x-0 opacity-100' : 'translate-x-20 opacity-0'
-        }`}>
-          {[
-            { icon: FaLinkedin, href: "https://www.linkedin.com/in/bablu-kumar92/", color: "hover:text-blue-400", delay: 0 },
-            { icon: FaGithub, href: "https://github.com/BabluKumar091", color: "hover:text-gray-400", delay: 100 },
-            { icon: FaInstagram, href: "#", color: "hover:text-pink-500", delay: 200 },
-            { icon: FaTwitterSquare, href: "#", color: "hover:text-blue-400", delay: 300 }
-          ].map((social, index) => (
-            <a 
-              key={index}
-              href={social.href} 
-              className={`text-white ${social.color} transition-all duration-300 transform hover:scale-125 hover:-translate-y-1`}
-              style={{ transitionDelay: `${social.delay}ms` }}
-            >
-              <social.icon size={24} />
-            </a>
-          ))}
-        </div>
-      </div>
-
-      
-
-     
+      </section>
 
       {/* About Modal */}
-      {showAbout && <About onClose={() => setShowAbout(false)} />}
+      <AnimatePresence>
+        {showAbout && <About onClose={() => setShowAbout(false)} />}
+      </AnimatePresence>
 
-      {/* Project Section */}
-      <div id="projects-section" className="py-20">
-        <ProjectSec />
-      </div>
-
-      {/* Client Reviews Section */}
-      <div className="py-20">
-        <Client />
-      </div>
-
-      {/* Contact Form Section */}
-      <div id="contact-section" className="py-20">
-        <Contact />
-      </div>
-
-      {/* Footer */}
+      <ProjectSec />
+      <Education />
+      <Contact />
       <Footer />
 
-      <CursorEffect/>
     </div>
   );
 }
